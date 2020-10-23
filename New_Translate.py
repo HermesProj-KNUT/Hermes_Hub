@@ -289,7 +289,8 @@ class socket_Thread(QtCore.QThread):
                     print("send to Application : ", stt_ment)
                     connection_sock.send(stt_ment.encode('utf-8'))
                     message_chk = 0
-            except:
+            except Exception as e :
+                print("error = ",e)
                 self.discon(connection_sock, pre_connection_sock)
                 break
         Tran_Window.socket_recon()
