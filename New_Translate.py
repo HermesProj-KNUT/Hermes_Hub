@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from bluetooth import *
 import sys, os, pyaudio, time, pygame, subprocess
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input_your_json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/heremesproj-e1fa57ba2b46.json"
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
 RATE = 48000
@@ -26,9 +26,10 @@ blue_ui = uic.loadUiType('/home/pi/Hub/ui/bluetooth.ui')[0]
 
 
 global Tran_Window, Main_Window, Wifi_Window, Blue_Window, stt_client, tts_client, \
-    gender, tts_ment, stt_ment, speech_Th, stream, sock_t, message_chk
+    gender, tts_ment, stt_ment, speech_Th, stream, sock_t, message_chk, tts_ble_chk
 stt_ment = ""
 message_chk = 0
+tts_ble_chk = 0
 
 # 마이크를 활성화 하여 음성을 수음하는 클래스
 class MicrophoneStream(object):
@@ -189,7 +190,8 @@ class text_to_speech:
                 speak.write(response.audio_content)
                 print('Audio content written to file' + filename)
             return 1
-        except:
+        except Exception as e :
+            print(e)
             return 0
 
     # 생성된 mp3파일을 재생
@@ -200,11 +202,18 @@ class text_to_speech:
         pygame.mixer.music.play()
         time.sleep(audio.info.length + 0.2)
         pygame.quit()
+        subprocess.call(['sudo', 'omxplayer', '-o', 'local', filename])
+        print("play = ", filename)
         return
+
+    def ble_chk(self):
+        global tts_ble_chk
+        tts_ble_chk = 0
 
     # mp3파일을 생성하기전 파일이름과 오디오 정보를 전달하는 함수.
     # 파일이름에 0과 1을 번갈아가며 함수의 파일점유 오류를 해결
     def naming(self, response):
+        global tts_ble_chk
         chk = 0
         Hub_load = "/home/pi/Hub/"
         filename = Hub_load + "output" + str(chk) + ".mp3"
@@ -216,12 +225,17 @@ class text_to_speech:
 
     # 메인함수. naming함수를 가장 먼저 실행 (파일이름으로 인한 오류예방을 위함임)
     def tts_main(self):
+        global tts_ble_chk
         client = texttospeech.TextToSpeechClient()
         voice = self.gender_select()
         input_text = texttospeech.types.SynthesisInput(text=tts_ment)
         audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3)
         response = client.synthesize_speech(input_text, voice, audio_config)
-        self.naming(response)
+        tts_ble_chk +=1
+        if (tts_ble_chk <= 1):
+            self.naming(response)
+        if (tts_ble_chk == 2):
+            self.ble_chk()
         return tts_ment
 
 
@@ -258,7 +272,7 @@ class socket_Thread(QtCore.QThread):
         super().__init__(parent)
 
     def run(self):
-        global tts_ment, stt_ment, message_chk
+        global tts_ment, stt_ment, message_chk, tts_ble_chk
         uuid = "00001101-0000-1000-8000-00805F9B34FB"
         pre_connection_sock = BluetoothSocket(RFCOMM)
         pre_connection_sock.bind(('', PORT_ANY))
