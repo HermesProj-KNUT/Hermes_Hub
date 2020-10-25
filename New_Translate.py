@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from bluetooth import *
 import sys, os, pyaudio, time, pygame, subprocess
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/heremesproj-e1fa57ba2b46.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input_your.json"
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
 RATE = 48000
@@ -199,10 +199,10 @@ class text_to_speech:
         pygame.mixer.init()
         pygame.mixer.music.load(filename)
         audio = MP3(filename)
-        pygame.mixer.music.play()
+        # pygame.mixer.music.play()
+        subprocess.call(['sudo', 'omxplayer', '-o', 'local', filename])
         time.sleep(audio.info.length + 0.2)
         pygame.quit()
-        subprocess.call(['sudo', 'omxplayer', '-o', 'local', filename])
         print("play = ", filename)
         return
 

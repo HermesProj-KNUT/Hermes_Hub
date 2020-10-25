@@ -12,14 +12,17 @@
     python3 -m pip install --upgrade pip
     apt install bluetooth blueman bluez python3-bluetooth libbluetooth-dev libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev fonts-unfonts-core 
     pip3 install pybluez pybleno
+    apt install pulseaudio pavucontrol vim
     apt-get clean
 
 
 3. 깃허브에서 프로젝트 파일 다운로드 및 시스템 환경변수 등록
      cd /home/pi
      git clone https://github.com/HermesProj-KNUT/Hermes_Hub
+     mv Hermes_Hub/ Hub
+     chmod 777 -R Hub/
      nano ~/.bashrc
-     맨하단에 export GOOGLE_APPLICATION_CREDENTIALS="/home/pi/Hub/your_json"
+     맨하단에 export GOOGLE_APPLICATION_CREDENTIALS="/home/pi/Hub/input_your_json"
      source ~/.bashrc
 
 
@@ -94,12 +97,12 @@ ExecStart=/bin/chgrp bluetooth /var/run/sdp
 aplay -l
 arecord -l 
 => 해당 장치의 card 번호와 device번호 확인
-nano /usr/share/alsa/alsa.conf
+sudo nano /usr/share/alsa/alsa.conf
 page down 4번 후 아래와 같이 수정
-defaults.ctl.card 해당카드번호
-defaults.pcm.card 해당카드번호
+defaults.ctl.card 1
+defaults.pcm.card 1
 수정후 
-nano .asoundrc
+sudo nano .asoundrc
 pcm.!default {
   type asym
   capture.pcm "mic"
