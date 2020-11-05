@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Encoding=UTF-8
-Name=WifiOptimizer
-Path=/home/pi/Hub
-Icon=/home/pi/Hub/icon/Wifi.png
-Exec=sh /home/pi/Hub/desktop_sh/wifi_optimizer.sh
-Terminal=true

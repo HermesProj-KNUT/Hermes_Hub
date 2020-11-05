@@ -6,6 +6,7 @@ python3 -m pip install --upgrade pip
 apt install bluetooth blueman bluez python3-bluetooth libbluetooth-dev libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev fonts-unfonts-core 
 pip3 install pybluez pybleno
 apt install pulseaudio pavucontrol vim
+apt install libsdl2-mixer-2.0-0
 apt-get clean
 python3 -m pip install --upgrade google-cloud pyaudio mutagen google pygame PyQt-builder PyQt5-sip
 python3 -m pip install google-cloud-speech==1.3.2

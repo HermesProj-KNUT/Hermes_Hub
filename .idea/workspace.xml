@@ -20,8 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d39c9880-4667-4adf-b39e-6d4514ec2b9b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/New_Translate.py" beforeDir="false" afterPath="$PROJECT_DIR$/New_Translate.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Hub_setting.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Hub_setting.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell/wifi_list_create.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shell/wifi_list_create.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wifi_optimizer.desktop" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/허브세팅을 위한 라즈베리파이 기본세팅.txt" beforeDir="false" afterPath="$PROJECT_DIR$/허브세팅을 위한 라즈베리파이 기본세팅.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
