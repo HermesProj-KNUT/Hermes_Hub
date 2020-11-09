@@ -8,10 +8,17 @@ from six.moves import queue
 from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QIcon
-from bluetooth import *
-import sys, os, pyaudio, time, pygame, subprocess
+import sys, os, pyaudio, time, pygame, subprocess, firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input_your.json"
+cred = credentials.Certificate("/home/pi/Hub/input.json")
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
+
+# 파이어베이스 초기화
+firebase_admin.initialize_app(cred, {
+    'projectId': "proj_id"
+})
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
 RATE = 48000
@@ -24,12 +31,14 @@ hub_ui = uic.loadUiType('/home/pi/Hub/ui/hub.ui')[0]
 wifi_ui = uic.loadUiType('/home/pi/Hub/ui/wifi.ui')[0]
 blue_ui = uic.loadUiType('/home/pi/Hub/ui/bluetooth.ui')[0]
 
-
 global Tran_Window, Main_Window, Wifi_Window, Blue_Window, stt_client, tts_client, \
-    gender, tts_ment, stt_ment, speech_Th, stream, sock_t, message_chk, tts_ble_chk
+    gender, tts_ment, stt_ment, speech_Th, stream, doc_name, db, ment
+
+ment = ""
+tts_ment = ""
 stt_ment = ""
-message_chk = 0
-tts_ble_chk = 0
+doc_name = "temp"
+db = firestore.client()
 
 # 마이크를 활성화 하여 음성을 수음하는 클래스
 class MicrophoneStream(object):
@@ -83,6 +92,7 @@ class MicrophoneStream(object):
 
 # 음성인식 스레드 클래스
 class Speech(Thread):
+    global stream
     def __init__(self):
         Thread.__init__(self)
         self.language_code = 'ko-KR'  # a BCP-47 language tag
@@ -206,10 +216,6 @@ class text_to_speech:
         print("play = ", filename)
         return
 
-    def ble_chk(self):
-        global tts_ble_chk
-        tts_ble_chk = 0
-
     # mp3파일을 생성하기전 파일이름과 오디오 정보를 전달하는 함수.
     # 파일이름에 0과 1을 번갈아가며 함수의 파일점유 오류를 해결
     def naming(self, response):
@@ -225,17 +231,11 @@ class text_to_speech:
 
     # 메인함수. naming함수를 가장 먼저 실행 (파일이름으로 인한 오류예방을 위함임)
     def tts_main(self):
-        global tts_ble_chk
         client = texttospeech.TextToSpeechClient()
         voice = self.gender_select()
         input_text = texttospeech.types.SynthesisInput(text=tts_ment)
         audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3)
         response = client.synthesize_speech(input_text, voice, audio_config)
-        tts_ble_chk +=1
-        if (tts_ble_chk <= 1):
-            self.naming(response)
-        if (tts_ble_chk == 2):
-            self.ble_chk()
         return tts_ment
 
 
@@ -249,6 +249,8 @@ class STT_Thread(QtCore.QThread):
         Tran_Window.STT_btn.setEnabled(False)
         Tran_Window.STT_stop_btn.setEnabled(True)
         prt = stt_client.stt_main()
+        ref = db.collection(u'Live_translate').document(doc_name)
+        ref.update({u'stt' : prt})
         if (len(prt) >= 17):
             m = 0
             n = 17
@@ -267,52 +269,45 @@ class STT_Thread(QtCore.QThread):
 
 
 # TTS 및 STT 함수작동 및 소켓통신
-class socket_Thread(QtCore.QThread):
+class TTS_Thread(QtCore.QThread):
     def __init__(self, parent):
         super().__init__(parent)
 
     def run(self):
-        global tts_ment, stt_ment, message_chk, tts_ble_chk
-        uuid = "00001101-0000-1000-8000-00805F9B34FB"
-        pre_connection_sock = BluetoothSocket(RFCOMM)
-        pre_connection_sock.bind(('', PORT_ANY))
-        pre_connection_sock.listen(1)
-        advertise_service(pre_connection_sock, "Hermes", service_id=uuid, service_classes=[uuid, SERIAL_PORT_CLASS], profiles=[SERIAL_PORT_PROFILE])
-        connection_sock, addr = pre_connection_sock.accept()
-        print('Accepted_Connection_from : ', addr)
+        global tts_ment, ment
         while True:
             try:
-                if message_chk == 0:
-                    receive_data = connection_sock.recv(25600)
-                    tts_ment = receive_data.decode()
-                    prt = tts_client.tts_main()
-                    if len(prt) >= 17:
-                        m = 0
-                        n = 17
-                        out_prt = ""
-                        while n <= len(prt):
-                            out_prt += prt[m:n] + '\n'
-                            m += 17
-                            n += 17
-                            if n > len(prt):
-                                out_prt += prt[m:]
-                        Tran_Window.TTS_lbl.setText(out_prt)
-                    elif len(prt) < 17:
-                        Tran_Window.TTS_lbl.setText(prt)
-                elif message_chk == 1:
-                    print("send to Application : ", stt_ment)
-                    connection_sock.send(stt_ment.encode('utf-8'))
-                    message_chk = 0
-            except Exception as e :
-                print("error = ",e)
-                self.discon(connection_sock, pre_connection_sock)
-                break
-        Tran_Window.socket_recon()
+                ref = db.collection(u'Live_translate').document(doc_name).get().to_dict()
+                data = str(ref)
+                for i in range(0, len(data), 1):
+                    if (data[i] == 't' and data[i + 1] == 't' and data[i + 2] == 's'):
+                        for j in range(i + 7, len(data), 1):
+                            if (data[j] != "'"):
+                                ment += data[j]
+                            else:
+                                break
+                tts_ment = ment
+                ment = ""
+                prt = tts_client.tts_main()
+                if len(prt) >= 17:
+                    m = 0
+                    n = 17
+                    out_prt = ""
+                    while n <= len(prt):
+                        out_prt += prt[m:n] + '\n'
+                        m += 17
+                        n += 17
+                        if n > len(prt):
+                            out_prt += prt[m:]
+                    Tran_Window.TTS_lbl.setText(out_prt)
+                elif len(prt) < 17:
+                    Tran_Window.TTS_lbl.setText(prt)
+            except Exception as e:
+                print("error = ", e)
 
-    def discon(self, connection_sock, pre_connection_sock):
-        connection_sock.close()
-        pre_connection_sock.close()
-        print("Socket_Disconnect")
+    def get_tts(self):
+        global tts_ment, ment
+
 
 
 # 실시간 통역 화면창 클래스
@@ -330,7 +325,7 @@ class Translate_Window(QtWidgets.QWidget, chatting_ui):
         self.gender_male.setChecked(True)
         self.gender_male.clicked.connect(self.gender_select)
         self.gender_female.clicked.connect(self.gender_select)
-        self.socket_recon()
+        self.get_tts()
         self.STT_stop_btn.setEnabled(False)
         self.STT_lbl_hide.setPixmap(QPixmap("/home/pi/Hub/icon/my_talk.png"))
         self.TTS_lbl_hide.setPixmap(QPixmap("/home/pi/Hub/icon/other_talk.png"))
@@ -363,11 +358,9 @@ class Translate_Window(QtWidgets.QWidget, chatting_ui):
         elif self.gender_female.isChecked():
             gender = 2
 
-    def socket_recon(self):
-        global sock_t
-        print("Socket_Reconnect")
-        sock_t = socket_Thread(self)
-        sock_t.start()
+    def get_tts(self):
+        tts_t = TTS_Thread(self)
+        tts_t.start()
 
 
 # 와이파이 검색 스레드

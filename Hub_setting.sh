@@ -9,7 +9,7 @@ apt install pulseaudio pavucontrol vim
 apt install libsdl2-mixer-2.0-0
 apt-get clean
 python3 -m pip install --upgrade google-cloud pyaudio mutagen google pygame PyQt-builder PyQt5-sip
-python3 -m pip install google-cloud-speech==1.3.2
+python3 -m pip install google-cloud-speech==1.3.2 firebase_admin
 pip3 install "google-cloud-texttospeech<2.0.0"
 apt install portaudio19-dev pulseaudio python3-pyqt5
 apt install matchbox-keyboard
