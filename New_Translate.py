@@ -17,7 +17,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "projid"
+    'projectId': "projId"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -219,7 +219,6 @@ class text_to_speech:
     # mp3파일을 생성하기전 파일이름과 오디오 정보를 전달하는 함수.
     # 파일이름에 0과 1을 번갈아가며 함수의 파일점유 오류를 해결
     def naming(self, response):
-        global tts_ble_chk
         chk = 0
         Hub_load = "/home/pi/Hub/"
         filename = Hub_load + "output" + str(chk) + ".mp3"
@@ -250,7 +249,7 @@ class STT_Thread(QtCore.QThread):
         Tran_Window.STT_stop_btn.setEnabled(True)
         prt = stt_client.stt_main()
         ref = db.collection(u'Live_translate').document(doc_name)
-        ref.update({u'stt' : prt})
+        ref.update({u'stt': prt})
         if (len(prt) >= 17):
             m = 0
             n = 17
@@ -277,6 +276,8 @@ class TTS_Thread(QtCore.QThread):
         global tts_ment, ment
         while True:
             try:
+                mac_input = db.collection(u'Live_translate').document(doc_name)
+                mac_input.update({u'hub_MAC': "HermesHub"})
                 ref = db.collection(u'Live_translate').document(doc_name).get().to_dict()
                 data = str(ref)
                 for i in range(0, len(data), 1):
@@ -377,13 +378,18 @@ class Codekey_Window(QtWidgets.QWidget, code_ui):
 
     def translate(self):
         global doc_name
-        doc_name = str(self.key_input.text())
+        doc_name = str(self.key_input.toPlainText())
         try :
-            ref = db.collection(u'Live_translate').document(doc_name).id()
-            if (ref == True) :
-                subprocess.call(['sudo', 'killall', 'matchbox-keyboa'])
-                self.hide()
-                Tran_Window.show()
+            id_list = []
+            db = firestore.client()
+            ref_ = db.collection(u'Live_translate').stream()
+            for doc in ref_:
+                id_list.append(doc.id)
+            for i in range(0, len(id_list), 1):
+                if (doc_name == id_list[i]):
+                    subprocess.call(['sudo', 'killall', 'matchbox-keyboa'])
+                    self.hide()
+                    Tran_Window.show()
         except Exception as e :
             print("코드키 오류 = ", e)
             self.key_input.clear()
@@ -482,7 +488,6 @@ class Hub_main_Window(QtWidgets.QWidget, hub_ui):
         self.setGeometry(0, 65, 795, 415)
         self.Translate_btn.clicked.connect(self.run_translate)
         self.Wifi_btn.clicked.connect(self.con_wifi)
-        self.blue_btn.clicked.connect(self.ble_run)
         self.exit_btn.clicked.connect(self.shut_down)
         self.Wifi_btn.setIcon(QIcon("/home/pi/Hub/icon/Wifi.png"))
         self.exit_btn.setIcon(QIcon("/home/pi/Hub/icon/hub_power_off.png"))
