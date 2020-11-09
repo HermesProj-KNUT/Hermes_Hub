@@ -22,8 +22,6 @@
     <list default="true" id="d39c9880-4667-4adf-b39e-6d4514ec2b9b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/New_Translate.py" beforeDir="false" afterPath="$PROJECT_DIR$/New_Translate.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/google-services.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/hub.ui" beforeDir="false" afterPath="$PROJECT_DIR$/ui/hub.ui" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

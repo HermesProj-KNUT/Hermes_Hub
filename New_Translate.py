@@ -17,7 +17,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "projId"
+    'projectId': "projID"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -32,8 +32,9 @@ wifi_ui = uic.loadUiType('/home/pi/Hub/ui/wifi.ui')[0]
 code_ui = uic.loadUiType('/home/pi/Hub/ui/chat_key_input.ui')[0]
 
 global Tran_Window, Main_Window, Wifi_Window, Code_Window, stt_client, tts_client, \
-    gender, tts_ment, stt_ment, speech_Th, stream, doc_name, db, ment
+    gender, tts_ment, stt_ment, speech_Th, stream, doc_name, db, ment, tts_chk
 
+tts_chk = 0
 ment = ""
 tts_ment = ""
 stt_ment = ""
@@ -211,7 +212,7 @@ class text_to_speech:
         audio = MP3(filename)
         # pygame.mixer.music.play()
         subprocess.call(['sudo', 'omxplayer', '-o', 'local', filename])
-        time.sleep(audio.info.length + 0.2)
+        time.sleep(audio.info.length + 1)
         pygame.quit()
         print("play = ", filename)
         return
@@ -230,11 +231,14 @@ class text_to_speech:
 
     # 메인함수. naming함수를 가장 먼저 실행 (파일이름으로 인한 오류예방을 위함임)
     def tts_main(self):
+        global tts_chk
         client = texttospeech.TextToSpeechClient()
         voice = self.gender_select()
         input_text = texttospeech.types.SynthesisInput(text=tts_ment)
         audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3)
         response = client.synthesize_speech(input_text, voice, audio_config)
+        if (tts_chk == 1):
+            self.naming(response)
         return tts_ment
 
 
@@ -273,7 +277,7 @@ class TTS_Thread(QtCore.QThread):
         super().__init__(parent)
 
     def run(self):
-        global tts_ment, ment
+        global tts_ment, ment, tts_chk
         while True:
             try:
                 mac_input = db.collection(u'Live_translate').document(doc_name)
@@ -287,6 +291,10 @@ class TTS_Thread(QtCore.QThread):
                                 ment += data[j]
                             else:
                                 break
+                if (ment != tts_ment):
+                    tts_chk = 1
+                else:
+                    tts_chk = 0
                 tts_ment = ment
                 ment = ""
                 prt = tts_client.tts_main()
