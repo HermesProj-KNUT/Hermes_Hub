@@ -17,7 +17,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "proj_id"
+    'projectId': "projid"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -29,9 +29,9 @@ CHUNK = int(RATE / 10)
 chatting_ui = uic.loadUiType('/home/pi/Hub/ui/chatting.ui')[0]
 hub_ui = uic.loadUiType('/home/pi/Hub/ui/hub.ui')[0]
 wifi_ui = uic.loadUiType('/home/pi/Hub/ui/wifi.ui')[0]
-blue_ui = uic.loadUiType('/home/pi/Hub/ui/bluetooth.ui')[0]
+code_ui = uic.loadUiType('/home/pi/Hub/ui/chat_key_input.ui')[0]
 
-global Tran_Window, Main_Window, Wifi_Window, Blue_Window, stt_client, tts_client, \
+global Tran_Window, Main_Window, Wifi_Window, Code_Window, stt_client, tts_client, \
     gender, tts_ment, stt_ment, speech_Th, stream, doc_name, db, ment
 
 ment = ""
@@ -309,7 +309,6 @@ class TTS_Thread(QtCore.QThread):
         global tts_ment, ment
 
 
-
 # 실시간 통역 화면창 클래스
 class Translate_Window(QtWidgets.QWidget, chatting_ui):
     def __init__(self):
@@ -361,6 +360,39 @@ class Translate_Window(QtWidgets.QWidget, chatting_ui):
     def get_tts(self):
         tts_t = TTS_Thread(self)
         tts_t.start()
+
+
+class Codekey_Window(QtWidgets.QWidget, code_ui):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowTitle("codeKey_input")
+        self.setGeometry(0, 65, 795, 415)
+        self.connect_btn.clicked.connect(self.translate)
+        self.exit_btn.clicked.connect(self.back)
+        self.guide_img.setPixmap(QPixmap("/home/pi/Hub/chat_key/guide.png"))
+        self.guide_txt.setPixmap(QPixmap("/home/pi/Hub/chat_key/guide_text.png"))
+        self.connect_btn.setIcon(QIcon("/home/pi/Hub/icon/connect.png"))
+        self.exit_btn.setIcon(QIcon("/home/pi/Hub/icon/exit.png"))
+
+    def translate(self):
+        global doc_name
+        doc_name = str(self.key_input.text())
+        try :
+            ref = db.collection(u'Live_translate').document(doc_name).id()
+            if (ref == True) :
+                subprocess.call(['sudo', 'killall', 'matchbox-keyboa'])
+                self.hide()
+                Tran_Window.show()
+        except Exception as e :
+            print("코드키 오류 = ", e)
+            self.key_input.clear()
+
+    def back(self):
+        subprocess.call(['sudo', 'killall', 'matchbox-keyboa'])
+        self.key_input.clear()
+        self.hide()
+        Main_Window.show()
 
 
 # 와이파이 검색 스레드
@@ -434,70 +466,11 @@ class Wifi_Con_Window(QtWidgets.QWidget, wifi_ui):
 
     def wifi_connect(self):
         Wifi_Window.connect_btn.setEnabled(False)
-        selected_PWD = str(self.pw_text.text())
-        g_pw = selected_PWD
+        g_pw = str(self.pw_text.text())
         print("SSID =" + self.g_ssid + " PW =" + g_pw)
         subprocess.call(['sudo', 'bash', '/home/pi/Hub/shell/wifi_con.sh', self.g_ssid, g_pw])
         self.pw_text.clear()
         self.connect_btn.setEnabled(True)
-
-
-# 블루투스 기기검색 & 라즈베리파이가 스마트폰에서 블루투스로 검색되도록
-class blue_scan_Thread(QtCore.QThread):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-    def run(self):
-        subprocess.call(['sudo', 'bluetoothctl', 'power', 'on'])
-        subprocess.call(['sudo', 'bluetoothctl', 'agent', 'on'])
-        subprocess.call(['sudo', 'bluetoothctl', 'discoverable', 'on'])
-        subprocess.call(['sudo', 'bluetoothctl', 'pairable', 'on'])
-        subprocess.call(['sudo', 'bluetoothctl', 'trust', 'on'])
-        subprocess.call(['sudo', 'bash', '/home/pi/Hub/shell/bluetooth_trust.sh'])
-        file = open('/home/pi/Hub/shell/bluetooth_MAC.txt', 'r', encoding='UTF-8')
-        lines = file.readlines()
-        if len(lines) >= 1:
-            for MAC in lines:
-                subprocess.call(['sudo', 'bash', '/home/pi/Hub/shell/bluetooth_recon.sh', MAC])
-            file.close()
-
-
-# 블루투스 연결화면. 가이드 표시
-class Bluetooth_Window(QtWidgets.QWidget, blue_ui):
-    global chk
-    def __init__(self):
-        self.chk = 1
-        super().__init__()
-        self.setupUi(self)
-        self.setWindowTitle("bluetooth_connect")
-        self.setGeometry(0, 65, 795, 415)
-        self.prev_btn.clicked.connect(self.prev)
-        self.next_btn.clicked.connect(self.next)
-        self.exit_btn.clicked.connect(self.back)
-        file_name = "/home/pi/Hub/how_to_ble/" + str(self.chk) + ".png"
-        self.how_lbl.setPixmap(QPixmap(file_name))
-        self.prev_btn.setIcon(QIcon("/home/pi/Hub/icon/prev_arrow.png"))
-        self.next_btn.setIcon(QIcon("/home/pi/Hub/icon/next_arrow.png"))
-        self.exit_btn.setIcon(QIcon("/home/pi/Hub/icon/exit.png"))
-        self.how_lbl.setPixmap(QPixmap("/home/pi/Hub/how_to_ble/1.png"))
-
-    def prev(self):
-        self.chk -= 1
-        if self.chk <= 0:
-            self.chk = 7
-        file_name = "/home/pi/Hub/how_to_ble/" + str(self.chk) + ".png"
-        self.how_lbl.setPixmap(QPixmap(file_name))
-
-    def next(self):
-        self.chk += 1
-        if self.chk >= 8:
-            self.chk = 1
-        file_name = "/home/pi/Hub/how_to_ble/" + str(self.chk) + ".png"
-        self.how_lbl.setPixmap(QPixmap(file_name))
-
-    def back(self):
-        self.hide()
-        Main_Window.show()
 
 
 # 허브의 메인 UI
@@ -513,25 +486,20 @@ class Hub_main_Window(QtWidgets.QWidget, hub_ui):
         self.exit_btn.clicked.connect(self.shut_down)
         self.Wifi_btn.setIcon(QIcon("/home/pi/Hub/icon/Wifi.png"))
         self.exit_btn.setIcon(QIcon("/home/pi/Hub/icon/hub_power_off.png"))
-        self.blue_btn.setIcon(QIcon("/home/pi/Hub/icon/bluetooth_connect.png"))
         self.Translate_btn.setIcon(QIcon("/home/pi/Hub/icon/Live_translate.png"))
         self.show()
 
     def run_translate(self):
         self.hide()
-        Tran_Window.show()
+        Code_Window.show()
+        x = keyboard_setup(self)
+        x.start()
 
     def con_wifi(self):
         self.hide()
         Wifi_Window.show()
         x = keyboard_setup(self)
         x.start()
-
-    def ble_run(self):
-        self.hide()
-        x = blue_scan_Thread(self)
-        x.start()
-        Blue_Window.show()
 
     def shut_down(self):
         QCoreApplication.instance().quit
@@ -542,8 +510,8 @@ if __name__ == '__main__':
     stt_client = speech_to_text()
     tts_client = text_to_speech()
     app = QtWidgets.QApplication([])
+    Code_Window = Codekey_Window()
     Tran_Window = Translate_Window()
     Wifi_Window = Wifi_Con_Window()
-    Blue_Window = Bluetooth_Window()
     Main_Window = Hub_main_Window()
     app.exec()
