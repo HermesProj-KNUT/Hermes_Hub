@@ -2,22 +2,21 @@
 from __future__ import division
 from google.cloud import speech, texttospeech
 from google.cloud.speech import enums, types
-from mutagen.mp3 import MP3
 from threading import Thread
 from six.moves import queue
 from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QIcon
-import sys, os, pyaudio, time, pygame, subprocess, firebase_admin
+import sys, os, pyaudio, time, subprocess, firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
 cred = credentials.Certificate("/home/pi/Hub/input.json")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input2.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "projID"
+    'projectId': "projId"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -38,7 +37,7 @@ tts_chk = 0
 ment = ""
 tts_ment = ""
 stt_ment = ""
-doc_name = "temp"
+doc_name = ""
 db = firestore.client()
 
 # 마이크를 활성화 하여 음성을 수음하는 클래스
@@ -187,33 +186,27 @@ class text_to_speech:
 
     def gender_select(self):
         if (gender == 1):
-            voice = texttospeech.types.VoiceSelectionParams(language_code='Ko-KOR',
+            voice = texttospeech.types.VoiceSelectionParams(language_code='Ko-KOR', name='ko-KR-Standard-D',
                                                             ssml_gender=texttospeech.enums.SsmlVoiceGender.MALE)
         elif (gender == 2):
-            voice = texttospeech.types.VoiceSelectionParams(language_code='Ko-KOR',
+            voice = texttospeech.types.VoiceSelectionParams(language_code='Ko-KOR', name='ko-KR-Standard-B',
                                                             ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE)
         return voice
 
     # mp3파일 생성 함수 (response가 바로 오디오 정보)
-    def write_mp3_file(self, filename, response):
+    def write_file(self, filename, response):
         try:
             with open(filename, 'wb') as speak:
                 speak.write(response.audio_content)
                 print('Audio content written to file' + filename)
             return 1
-        except Exception as e :
+        except Exception as e:
             print(e)
             return 0
 
     # 생성된 mp3파일을 재생
     def play_Speech(self, filename):
-        pygame.mixer.init()
-        pygame.mixer.music.load(filename)
-        audio = MP3(filename)
-        # pygame.mixer.music.play()
-        subprocess.call(['sudo', 'omxplayer', '-o', 'local', filename])
-        time.sleep(audio.info.length + 1)
-        pygame.quit()
+        subprocess.call(['sudo', 'mpg321', filename])
         print("play = ", filename)
         return
 
@@ -223,10 +216,10 @@ class text_to_speech:
         chk = 0
         Hub_load = "/home/pi/Hub/"
         filename = Hub_load + "output" + str(chk) + ".mp3"
-        if self.write_mp3_file(filename, response) == 0:
+        if self.write_file(filename, response) == 0:
             chk = 1
             filename = Hub_load + "output" + str(chk) + ".mp3"
-            self.write_mp3_file(filename, response)
+            self.write_file(filename, response)
         self.play_Speech(filename)
 
     # 메인함수. naming함수를 가장 먼저 실행 (파일이름으로 인한 오류예방을 위함임)
@@ -234,12 +227,12 @@ class text_to_speech:
         global tts_chk
         client = texttospeech.TextToSpeechClient()
         voice = self.gender_select()
-        input_text = texttospeech.types.SynthesisInput(text=tts_ment)
-        audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3)
+        input_text = texttospeech.types.SynthesisInput(text=tts_ment + "")
+        audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3,
+                                                      sample_rate_hertz=24000)
         response = client.synthesize_speech(input_text, voice, audio_config)
         if (tts_chk == 1):
             self.naming(response)
-        return tts_ment
 
 
 # STT 버튼 클릭시 스레드 실행
@@ -297,20 +290,20 @@ class TTS_Thread(QtCore.QThread):
                     tts_chk = 0
                 tts_ment = ment
                 ment = ""
-                prt = tts_client.tts_main()
-                if len(prt) >= 17:
+                if len(tts_ment) >= 17:
                     m = 0
                     n = 17
-                    out_prt = ""
-                    while n <= len(prt):
-                        out_prt += prt[m:n] + '\n'
+                    display_prt = ""
+                    while n <= len(tts_ment):
+                        display_prt += tts_ment[m:n] + '\n'
                         m += 17
                         n += 17
-                        if n > len(prt):
-                            out_prt += prt[m:]
-                    Tran_Window.TTS_lbl.setText(out_prt)
-                elif len(prt) < 17:
-                    Tran_Window.TTS_lbl.setText(prt)
+                        if n > len(tts_ment):
+                            display_prt += tts_ment[m:]
+                    Tran_Window.TTS_lbl.setText(display_prt)
+                elif len(tts_ment) < 17:
+                    Tran_Window.TTS_lbl.setText(tts_ment)
+                tts_client.tts_main()
             except Exception as e:
                 print("error = ", e)
 
