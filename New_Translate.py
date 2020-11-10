@@ -12,11 +12,11 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 
 cred = credentials.Certificate("/home/pi/Hub/input.json")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input2.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "projId"
+    'projectId': "projID"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -159,7 +159,8 @@ class Speech(Thread):
                 else:
                     self._buff.put(transcript+overwrite_chars)
                     num_chars_printed = 0
-        except:
+        except Exception as e:
+            print(e)
             return
 
 
@@ -340,9 +341,8 @@ class Translate_Window(QtWidgets.QWidget, chatting_ui):
         stt_t.start()
 
     def stt_stop(self):
-        global stream, message_chk
+        global stream
         stream.__exit__()
-        message_chk = 1
 
     def back(self):
         self.hide()
