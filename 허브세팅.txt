@@ -10,6 +10,7 @@ sudo ./LCD5-show
 
 
 2. json파일 등록
+su
 sudo nano your.json
 json파일 코드 복붙
 nano ~/.bashrc

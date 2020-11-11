@@ -1,4 +1,3 @@
-# [START speech_transcribe_streaming_mic]
 from __future__ import division
 from google.cloud import speech, texttospeech
 from google.cloud.speech import enums, types
@@ -16,7 +15,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "projID"
+    'projectId': "projId"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -92,7 +91,6 @@ class MicrophoneStream(object):
 
 # 음성인식 스레드 클래스
 class Speech(Thread):
-    global stream
     def __init__(self):
         Thread.__init__(self)
         self.language_code = 'ko-KR'  # a BCP-47 language tag
@@ -123,12 +121,10 @@ class Speech(Thread):
         self._buff.put(None)
         self.status = False
 
-    # 마이크의 동작을 일시정지
     def pauseMic(self):
         if self.mic is not None:
             self.mic.pause()
 
-    # 마이크의 동작을 재개
     def resumeMic(self):
         if self.mic is not None:
             self.mic.resume()
@@ -136,7 +132,6 @@ class Speech(Thread):
     def stopMic(self):
         self.mic.stop()
 
-    # 음성인식으로 변환된 블록단위로 버퍼에 저장
     def getText(self, block=True):
         return self._buff.get(block=block)
 
@@ -160,7 +155,7 @@ class Speech(Thread):
                     self._buff.put(transcript+overwrite_chars)
                     num_chars_printed = 0
         except Exception as e:
-            print(e)
+            print("Speech Error = ", e)
             return
 
 
@@ -202,7 +197,7 @@ class text_to_speech:
                 print('Audio content written to file' + filename)
             return 1
         except Exception as e:
-            print(e)
+            print("write mp3 file error = ", e)
             return 0
 
     # 생성된 mp3파일을 재생
@@ -215,25 +210,27 @@ class text_to_speech:
     # 파일이름에 0과 1을 번갈아가며 함수의 파일점유 오류를 해결
     def naming(self, response):
         chk = 0
-        Hub_load = "/home/pi/Hub/"
-        filename = Hub_load + "output" + str(chk) + ".mp3"
+        hub_load = "/home/pi/Hub/"
+        filename = hub_load + "output" + str(chk) + ".mp3"
         if self.write_file(filename, response) == 0:
             chk = 1
-            filename = Hub_load + "output" + str(chk) + ".mp3"
+            filename = hub_load + "output" + str(chk) + ".mp3"
             self.write_file(filename, response)
         self.play_Speech(filename)
 
     # 메인함수. naming함수를 가장 먼저 실행 (파일이름으로 인한 오류예방을 위함임)
     def tts_main(self):
         global tts_chk
-        client = texttospeech.TextToSpeechClient()
-        voice = self.gender_select()
-        input_text = texttospeech.types.SynthesisInput(text=tts_ment + "")
-        audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3,
-                                                      sample_rate_hertz=24000)
-        response = client.synthesize_speech(input_text, voice, audio_config)
-        if (tts_chk == 1):
+        if tts_chk == 1:
+            client = texttospeech.TextToSpeechClient()
+            voice = self.gender_select()
+            input_text = texttospeech.types.SynthesisInput(text=tts_ment + "")
+            audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3,
+                                                          sample_rate_hertz=24000)
+            response = client.synthesize_speech(input_text, voice, audio_config)
             self.naming(response)
+        else:
+            return
 
 
 # STT 버튼 클릭시 스레드 실행
@@ -243,12 +240,13 @@ class STT_Thread(QtCore.QThread):
         super().__init__(parent)
 
     def run(self):
+        global db
         Tran_Window.STT_btn.setEnabled(False)
         Tran_Window.STT_stop_btn.setEnabled(True)
         prt = stt_client.stt_main()
         ref = db.collection(u'Live_translate').document(doc_name)
         ref.update({u'stt': prt})
-        if (len(prt) >= 17):
+        if len(prt) >= 17:
             m = 0
             n = 17
             out_prt = ""
@@ -265,13 +263,13 @@ class STT_Thread(QtCore.QThread):
         Tran_Window.STT_stop_btn.setEnabled(False)
 
 
-# TTS 및 STT 함수작동 및 소켓통신
+# TTS 스레드
 class TTS_Thread(QtCore.QThread):
     def __init__(self, parent):
         super().__init__(parent)
 
     def run(self):
-        global tts_ment, ment, tts_chk
+        global tts_ment, ment, tts_chk, db
         while True:
             try:
                 mac_input = db.collection(u'Live_translate').document(doc_name)
@@ -279,13 +277,13 @@ class TTS_Thread(QtCore.QThread):
                 ref = db.collection(u'Live_translate').document(doc_name).get().to_dict()
                 data = str(ref)
                 for i in range(0, len(data), 1):
-                    if (data[i] == 't' and data[i + 1] == 't' and data[i + 2] == 's'):
+                    if data[i] == 't' and data[i + 1] == 't' and data[i + 2] == 's':
                         for j in range(i + 7, len(data), 1):
-                            if (data[j] != "'"):
+                            if data[j] != "'":
                                 ment += data[j]
                             else:
                                 break
-                if (ment != tts_ment):
+                if ment != tts_ment:
                     tts_chk = 1
                 else:
                     tts_chk = 0
@@ -307,9 +305,6 @@ class TTS_Thread(QtCore.QThread):
                 tts_client.tts_main()
             except Exception as e:
                 print("error = ", e)
-
-    def get_tts(self):
-        global tts_ment, ment
 
 
 # 실시간 통역 화면창 클래스
@@ -364,36 +359,38 @@ class Translate_Window(QtWidgets.QWidget, chatting_ui):
         tts_t.start()
 
 
+# 코드키 입력 클래스
 class Codekey_Window(QtWidgets.QWidget, code_ui):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle("codeKey_input")
-        self.setGeometry(0, 65, 795, 415)
+        self.setGeometry(0, 65, 795, 210)
         self.connect_btn.clicked.connect(self.translate)
         self.exit_btn.clicked.connect(self.back)
-        self.guide_img.setPixmap(QPixmap("/home/pi/Hub/chat_key/guide.png"))
-        self.guide_txt.setPixmap(QPixmap("/home/pi/Hub/chat_key/guide_text.png"))
+        self.guide_img.setPixmap(QPixmap("/home/pi/Hub/icon/guide_img.png"))
         self.connect_btn.setIcon(QIcon("/home/pi/Hub/icon/connect.png"))
         self.exit_btn.setIcon(QIcon("/home/pi/Hub/icon/exit.png"))
 
     def translate(self):
-        global doc_name
+        global doc_name, db
         doc_name = str(self.key_input.toPlainText())
-        try :
+        try:
             id_list = []
             db = firestore.client()
             ref_ = db.collection(u'Live_translate').stream()
             for doc in ref_:
                 id_list.append(doc.id)
             for i in range(0, len(id_list), 1):
-                if (doc_name == id_list[i]):
+                if doc_name == id_list[i]:
                     subprocess.call(['sudo', 'killall', 'matchbox-keyboa'])
                     self.hide()
                     Tran_Window.show()
-        except Exception as e :
+                if i >= len(id_list) and doc_name != id_list[i]:
+                    self.err_lbl.setText("코드가 틀립니다.\n코드를 다시 입력해주세요")
+        except Exception as e:
             print("코드키 오류 = ", e)
-            self.key_input.clear()
+        self.key_input.clear()
 
     def back(self):
         subprocess.call(['sudo', 'killall', 'matchbox-keyboa'])
