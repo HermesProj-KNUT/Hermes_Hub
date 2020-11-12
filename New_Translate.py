@@ -1,12 +1,13 @@
 from __future__ import division
 from google.cloud import speech, texttospeech
 from google.cloud.speech import enums, types
+from mutagen.mp3 import MP3
 from threading import Thread
 from six.moves import queue
 from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QIcon
-import sys, os, pyaudio, time, subprocess, firebase_admin
+import sys, os, pyaudio, time, subprocess, firebase_admin, pygame
 from firebase_admin import credentials
 from firebase_admin import firestore
 
@@ -15,7 +16,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "projId"
+    'projectId': "proj_Id"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -202,7 +203,12 @@ class text_to_speech:
 
     # 생성된 mp3파일을 재생
     def play_Speech(self, filename):
-        subprocess.call(['sudo', 'mpg321', filename])
+        pygame.mixer.init()
+        pygame.mixer.music.load(filename)
+        audio = MP3(filename)
+        pygame.mixer.music.play()
+        time.sleep(audio.info.length + 0.2)
+        pygame.quit()
         print("play = ", filename)
         return
 
@@ -271,40 +277,41 @@ class TTS_Thread(QtCore.QThread):
     def run(self):
         global tts_ment, ment, tts_chk, db
         while True:
-            try:
-                mac_input = db.collection(u'Live_translate').document(doc_name)
-                mac_input.update({u'hub_MAC': "HermesHub"})
-                ref = db.collection(u'Live_translate').document(doc_name).get().to_dict()
-                data = str(ref)
-                for i in range(0, len(data), 1):
-                    if data[i] == 't' and data[i + 1] == 't' and data[i + 2] == 's':
-                        for j in range(i + 7, len(data), 1):
-                            if data[j] != "'":
-                                ment += data[j]
-                            else:
-                                break
-                if ment != tts_ment:
-                    tts_chk = 1
-                else:
-                    tts_chk = 0
-                tts_ment = ment
-                ment = ""
-                if len(tts_ment) >= 17:
-                    m = 0
-                    n = 17
-                    display_prt = ""
-                    while n <= len(tts_ment):
-                        display_prt += tts_ment[m:n] + '\n'
-                        m += 17
-                        n += 17
-                        if n > len(tts_ment):
-                            display_prt += tts_ment[m:]
-                    Tran_Window.TTS_lbl.setText(display_prt)
-                elif len(tts_ment) < 17:
-                    Tran_Window.TTS_lbl.setText(tts_ment)
-                tts_client.tts_main()
-            except Exception as e:
-                print("error = ", e)
+            if doc_name != "":
+                try:
+                    mac_input = db.collection(u'Live_translate').document(doc_name)
+                    mac_input.update({u'hub_MAC': "HermesHub"})
+                    ref = db.collection(u'Live_translate').document(doc_name).get().to_dict()
+                    data = str(ref)
+                    for i in range(0, len(data), 1):
+                        if data[i] == 't' and data[i + 1] == 't' and data[i + 2] == 's':
+                            for j in range(i + 7, len(data), 1):
+                                if data[j] != "'":
+                                    ment += data[j]
+                                else:
+                                    break
+                    if ment != tts_ment:
+                        tts_chk = 1
+                    else:
+                        tts_chk = 0
+                    tts_ment = ment
+                    ment = ""
+                    if len(tts_ment) >= 17:
+                        m = 0
+                        n = 17
+                        display_prt = ""
+                        while n <= len(tts_ment):
+                            display_prt += tts_ment[m:n] + '\n'
+                            m += 17
+                            n += 17
+                            if n > len(tts_ment):
+                                display_prt += tts_ment[m:]
+                        Tran_Window.TTS_lbl.setText(display_prt)
+                    elif len(tts_ment) < 17:
+                        Tran_Window.TTS_lbl.setText(tts_ment)
+                    tts_client.tts_main()
+                except Exception as e:
+                    print("error = ", e)
 
 
 # 실시간 통역 화면창 클래스
