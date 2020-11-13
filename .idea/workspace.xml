@@ -21,7 +21,6 @@
   <component name="ChangeListManager">
     <list default="true" id="d39c9880-4667-4adf-b39e-6d4514ec2b9b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/New_Translate.py" beforeDir="false" afterPath="$PROJECT_DIR$/New_Translate.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -177,9 +176,9 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Python.hub_main" />
       <item itemvalue="Python.New_Translate" />
       <item itemvalue="Python.New_Translate_win" />
-      <item itemvalue="Python.hub_main" />
       <item itemvalue="Python.test_fire" />
       <item itemvalue="Python.teste" />
       <item itemvalue="Python.testt" />
