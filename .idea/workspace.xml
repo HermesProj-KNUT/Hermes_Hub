@@ -20,11 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d39c9880-4667-4adf-b39e-6d4514ec2b9b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/power.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Hub_setting.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Hub_setting.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/New_Translate.py" beforeDir="false" afterPath="$PROJECT_DIR$/New_Translate.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shutdown.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -311,10 +307,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="361" y="145" key="Vcs.Push.Dialog.v2/0.0.1536.824/1920.0.1920.1040@0.0.1536.824" timestamp="1597176919626" />
-    <state x="2161" y="27" width="1305" height="811" maximized="true" key="dock-window-1" timestamp="1605286227584">
+    <state x="2161" y="27" width="1305" height="811" maximized="true" key="dock-window-1" timestamp="1605290847383">
       <screen x="1920" y="0" width="1920" height="1040" />
     </state>
-    <state x="2161" y="27" width="1305" height="811" maximized="true" key="dock-window-1/0.0.1536.824/1920.0.1920.1040@0.0.1536.824" timestamp="1605286227584" />
+    <state x="2161" y="27" width="1305" height="811" maximized="true" key="dock-window-1/0.0.1536.824/1920.0.1920.1040@0.0.1536.824" timestamp="1605290847383" />
     <state x="431" y="145" width="672" height="678" key="search.everywhere.popup" timestamp="1599808711432">
       <screen x="0" y="0" width="1536" height="824" />
     </state>

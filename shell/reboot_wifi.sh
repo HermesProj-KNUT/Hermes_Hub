@@ -5,4 +5,5 @@ sudo hciconfig hci0 piscan
 sudo iw dev wlan0 set power_save off
 sudo wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant.conf -iwlan0 -d
 wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant.conf -iwlan0 -d
+sudo amixer cset numid=1 150
 sudo -i

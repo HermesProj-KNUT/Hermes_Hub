@@ -5,7 +5,7 @@ apt install python-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev
 python3 -m pip install --upgrade pip
 apt install bluetooth blueman bluez python3-bluetooth libbluetooth-dev libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev fonts-unfonts-core 
 pip3 install pybluez pybleno
-apt install pavucontrol vim mpg321
+apt install vim
 apt install libsdl2-mixer-2.0-0
 apt-get clean
 python3 -m pip install --upgrade google-cloud pyaudio mutagen google pygame PyQt-builder PyQt5-sip
