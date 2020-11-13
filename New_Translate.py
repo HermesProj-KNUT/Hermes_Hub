@@ -16,7 +16,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/Hub/input.json"
 
 # 파이어베이스 초기화
 firebase_admin.initialize_app(cred, {
-    'projectId': "proj_Id"
+    'projectId': "projid"
 })
 
 # HZ 단위의 샘플레이트. 마이크 설정에 맞게 값 설정 (for stt)
@@ -232,6 +232,7 @@ class text_to_speech:
             voice = self.gender_select()
             input_text = texttospeech.types.SynthesisInput(text=tts_ment + "")
             audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3,
+                                                          volume_gain_db=16.0, speaking_rate=0.85,
                                                           sample_rate_hertz=24000)
             response = client.synthesize_speech(input_text, voice, audio_config)
             self.naming(response)

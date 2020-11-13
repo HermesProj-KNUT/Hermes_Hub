@@ -13,6 +13,7 @@ python3 -m pip install google-cloud-speech==1.3.2 firebase_admin
 pip3 install "google-cloud-texttospeech<2.0.0"
 apt install portaudio19-dev python3-pyqt5
 apt install matchbox-keyboard
+sudo amixer cset numid=1 150
 git clone https://github.com/goodtft/LCD-show.git
 cd LCD-show/
 chmod +x LCD5-show
